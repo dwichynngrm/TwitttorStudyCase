@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: twittorapi-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: twittorapi
+  template:
+    metadata:
+      labels:
+        app: twittorapi
+    spec:
+      containers:
+      - name: twittorapi
+        image: dwichynngrm/twittorapi:latest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: twittorapi-clusterip-srv
+spec:
+  type: ClusterIP
+  selector:
+    app: twittorapi
+  ports:
+  - name: twittorapi
+    protocol: TCP
+    port: 80
+    targetPort: 80

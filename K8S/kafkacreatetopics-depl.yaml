@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafkacreatetopics-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafkacreatetopics
+  template:
+    metadata:
+      labels:
+        app: kafkacreatetopics
+    spec:
+      containers:
+      - name: kafkacreatetopics
+        image: dwichynngrm/kafkacreatetopics:latest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafkacreatetopics-clusterip-srv
+spec:
+  type: ClusterIP
+  selector:
+    app: kafkacreatetopics
+  ports:
+  - name: kafkacreatetopics
+    protocol: TCP
+    port: 80
+    targetPort: 80
