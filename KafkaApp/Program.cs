@@ -1,10 +1,13 @@
-﻿using Confluent.Kafka;
-using KafkaApp.Models;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using System;
+﻿using System;
+using System.Collections.Generic;
+using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using KafkaApp.Models;
 
 namespace KafkaApp
 {
@@ -25,7 +28,8 @@ namespace KafkaApp
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
             CancellationTokenSource cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (_, e) => {
+            Console.CancelKeyPress += (_, e) =>
+            {
                 e.Cancel = true; // prevent the process from terminating.
                 cts.Cancel();
             };
@@ -33,7 +37,7 @@ namespace KafkaApp
             using (var consumer = new ConsumerBuilder<string, string>(Serverconfig).Build())
             {
                 Console.WriteLine("Connected");
-                var topics = new string[] { "user", "role", "userrole", "twittor", "comment", "delete", "changepassword", "updateprofile", };
+                var topics = new string[] { "user", "role", "userrole", "lockuser", "changeuserrole", "twittor", "comment", "deletetweet", "changepassword", "updateprofile" };
                 consumer.Subscribe(topics);
 
                 Console.WriteLine("Waiting messages....");
@@ -61,6 +65,16 @@ namespace KafkaApp
                                 UserRole userrole = JsonConvert.DeserializeObject<UserRole>(cr.Message.Value);
                                 dbcontext.UserRoles.Add(userrole);
                             }
+                            if (cr.Topic == "lockuser")
+                            {
+                                UserRole lockuser = JsonConvert.DeserializeObject<UserRole>(cr.Message.Value);
+                                dbcontext.UserRoles.Remove(lockuser);
+                            }
+                            if (cr.Topic == "changeuserrole")
+                            {
+                                UserRole changeuserrole = JsonConvert.DeserializeObject<UserRole>(cr.Message.Value);
+                                dbcontext.UserRoles.Update(changeuserrole);
+                            }
                             if (cr.Topic == "twittor")
                             {
                                 Twittor twittor = JsonConvert.DeserializeObject<Twittor>(cr.Message.Value);
@@ -71,7 +85,7 @@ namespace KafkaApp
                                 Comment comment = JsonConvert.DeserializeObject<Comment>(cr.Message.Value);
                                 dbcontext.Comments.Add(comment);
                             }
-                            if (cr.Topic == "delete")
+                            if (cr.Topic == "deletetweet")
                             {
                                 Twittor twittor = JsonConvert.DeserializeObject<Twittor>(cr.Message.Value);
                                 dbcontext.Twittors.Remove(twittor);
@@ -90,8 +104,6 @@ namespace KafkaApp
                             await dbcontext.SaveChangesAsync();
                             Console.WriteLine("Data was saved into database");
                         }
-
-
                     }
                 }
                 catch (OperationCanceledException)

@@ -1,7 +1,8 @@
-﻿using Confluent.Kafka;
-using Microsoft.Extensions.Configuration;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
+using Confluent.Kafka;
+using Microsoft.Extensions.Configuration;
 
 namespace KafkaListeningApp
 {

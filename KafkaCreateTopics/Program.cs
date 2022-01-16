@@ -1,11 +1,11 @@
-﻿using Confluent.Kafka;
-using Confluent.Kafka.Admin;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 
-namespace KafkaCreateTopics
+namespace KafkaCreateTopic
 {
     class Program
     {
@@ -22,9 +22,11 @@ namespace KafkaCreateTopics
             topics.Add("user");
             topics.Add("role");
             topics.Add("userrole");
+            topics.Add("lockuser");
+            topics.Add("changeuserrole");
             topics.Add("twittor");
             topics.Add("comment");
-            topics.Add("delete");
+             topics.Add("deletetweet");
             topics.Add("changepassword");
             topics.Add("updateprofile");
             foreach (var topic in topics)

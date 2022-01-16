@@ -27,15 +27,10 @@ namespace KafkaApp.Models
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var builder = new ConfigurationBuilder()
-                  .AddJsonFile($"appsettings.json", true, true);
+                   .AddJsonFile($"appsettings.json", true, true);
 
             var config = builder.Build();
             optionsBuilder.UseSqlServer(config["Settings:Database"]);
-            //            if (!optionsBuilder.IsConfigured)
-            //            {
-            //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-            //                optionsBuilder.UseSqlServer("server=LAPTOP-H4V04E0N\\SQLEXPRESS;database=TwittorDb;uid=user2;pwd=user123");
-            //            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -50,8 +45,6 @@ namespace KafkaApp.Models
                     .IsRequired()
                     .HasMaxLength(150)
                     .IsUnicode(false);
-
-                entity.Property(e => e.TwittorId).HasColumnName("TwittorID");
 
                 entity.HasOne(d => d.Twittor)
                     .WithMany(p => p.Comments)
@@ -81,8 +74,6 @@ namespace KafkaApp.Models
                     .HasMaxLength(150)
                     .IsUnicode(false);
 
-                entity.Property(e => e.UserId).HasColumnName("UserID");
-
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Twittors)
                     .HasForeignKey(d => d.UserId)
@@ -106,8 +97,7 @@ namespace KafkaApp.Models
 
                 entity.Property(e => e.Password)
                     .IsRequired()
-                    .HasMaxLength(50)
-                    .IsUnicode(false);
+                    .HasColumnType("ntext");
 
                 entity.Property(e => e.Username)
                     .IsRequired()
@@ -118,10 +108,6 @@ namespace KafkaApp.Models
             modelBuilder.Entity<UserRole>(entity =>
             {
                 entity.ToTable("UserRole");
-
-                entity.Property(e => e.RoleId).HasColumnName("RoleID");
-
-                entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.HasOne(d => d.Role)
                     .WithMany(p => p.UserRoles)

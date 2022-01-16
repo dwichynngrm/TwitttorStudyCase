@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -8,15 +12,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TwittorAPI.GraphQL;
 using TwittorAPI.Models;
+using HotChocolate;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace TwittorAPI
 {
@@ -32,22 +32,22 @@ namespace TwittorAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            //var conString = Configuration.GetConnectionString("DefaultConnection");
 
             services.AddDbContext<TwittorDbContext>(options =>
-            options.UseSqlServer(Configuration.GetConnectionString("LocalConnection")));
-            
-            services.AddControllers();
-           
+                 options.UseSqlServer(Configuration.GetConnectionString("LocalConnection")));
 
             services.Configure<KafkaSettings>(Configuration.GetSection("KafkaSettings"));
-            services.Configure<TokenSettings>(Configuration.GetSection("TokenSettings"));
-
             // graphql
             services
                 .AddGraphQLServer()
                 .AddQueryType<Query>()
                 .AddMutationType<Mutation>()
                 .AddAuthorization();
+
+            services.AddControllers();
+
+            services.Configure<TokenSettings>(Configuration.GetSection("TokenSettings"));
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                .AddJwtBearer(options =>
@@ -63,7 +63,6 @@ namespace TwittorAPI
                    };
 
                });
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -72,7 +71,6 @@ namespace TwittorAPI
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-               
             }
 
             app.UseHttpsRedirection();

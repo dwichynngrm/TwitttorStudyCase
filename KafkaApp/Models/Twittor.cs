@@ -12,7 +12,7 @@ namespace KafkaApp.Models
             Comments = new HashSet<Comment>();
         }
 
-        public int TwittorId { get; set; }
+        public int Id { get; set; }
         public string TweetSection { get; set; }
         public int UserId { get; set; }
         public DateTime Created { get; set; }

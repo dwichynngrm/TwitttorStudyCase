@@ -2,7 +2,7 @@
 {
     public record EditProfileInput
     (
-        int? UserId,
+        int? Id,
         string FullName,
         string Email,
         string Username,

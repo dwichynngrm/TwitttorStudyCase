@@ -117,15 +117,17 @@ namespace TwittorAPI.GraphQL
 
                 var claims = new List<Claim>();
                 claims.Add(new Claim(ClaimTypes.Name, user.Username));
+                var userRoles = context.UserRoles.Where(o => o.UserId == user.Id).ToList();
 
-                foreach (var userRole in user.UserRoles)
+                foreach (var userRole in userRoles)
                 {
-                    var role = context.Roles.Where(o => o.RoleId == userRole.RoleId).FirstOrDefault();
+                    var role = context.Roles.Where(o => o.Id == userRole.RoleId).FirstOrDefault();
                     if (role != null)
                     {
                         claims.Add(new Claim(ClaimTypes.Role, role.RoleName));
                     }
                 }
+
 
                 var expired = DateTime.Now.AddHours(3);
                 var jwtToken = new JwtSecurityToken(
@@ -154,7 +156,7 @@ namespace TwittorAPI.GraphQL
             [Service] TwittorDbContext context,
             [Service] IOptions<KafkaSettings> kafkaSettings)
         {
-            var profile = context.Users.Where(o => o.UserId == input.UserId).FirstOrDefault();
+            var profile = context.Users.Where(o => o.Id == input.Id).FirstOrDefault();
             if (profile != null)
             {
                 profile.FullName = input.FullName;
@@ -206,27 +208,34 @@ namespace TwittorAPI.GraphQL
 
         [Authorize(Roles = new[] { "Member" })]
         public async Task<TransactionStatus> DeleteTwittorAsync(
-            int UserId,
+            int userId,
             [Service] TwittorDbContext context,
             [Service] IOptions<KafkaSettings> kafkaSettings)
         {
-            var tweet = context.Twittors.Where(o => o.UserId == UserId).ToList();
-            if (tweet != null)
+            var twets = context.Twittors.Where(o => o.UserId == userId).ToList();
+            bool check = false;
+            if (twets != null)
             {
-                var key = "delete-tweet-" + DateTime.Now.ToString();
-                var val = JObject.FromObject(tweet).ToString(Formatting.None);
-                var result = await KafkaHelper.SendMessage(kafkaSettings.Value, "delete tweet", key, val);
-                await KafkaHelper.SendMessage(kafkaSettings.Value, "logging", key, val);
-                var ret = new TransactionStatus(result, "");
-                if (!result)
-                    ret = new TransactionStatus(result, "Failed to submit data");
-                return await Task.FromResult(ret);
+                foreach (var twet in twets)
+                {
+                    var key = "delete-tweet-" + DateTime.Now.ToString();
+                    var val = JObject.FromObject(twet).ToString(Formatting.None);
+                    var result = await KafkaHelper.SendMessage(kafkaSettings.Value, "deletetweet", key, val);
+                    await KafkaHelper.SendMessage(kafkaSettings.Value, "logging", key, val);
+                    var ret = new TransactionStatus(result, "");
+                    check = true;
+
+                }
+                if (!check)
+                    return new TransactionStatus(false, "Failed to submit data");
+                return await Task.FromResult(new TransactionStatus(true, ""));
             }
             else
             {
-                return new TransactionStatus(false, "No data tweet");
+                return new TransactionStatus(false, "User has not tweeted yet");
             }
         }
+
 
         public async Task<TransactionStatus> AddRoleAsync(
             string roleName,
@@ -286,5 +295,57 @@ namespace TwittorAPI.GraphQL
             return await Task.FromResult(ret);
         }
 
+        [Authorize(Roles = new[] { "Admin" })]
+        public async Task<TransactionStatus> ChangeUserRoleAsync(
+            UserRoleInput input,
+            [Service] TwittorDbContext context,
+            [Service] IOptions<KafkaSettings> kafkaSettings)
+        {
+            var userRole = context.UserRoles.Where(o => o.UserId == input.UserId).FirstOrDefault();
+            if (userRole != null)
+            {
+                userRole.RoleId = input.RoleId;
+                var key = "change-user-role-" + DateTime.Now.ToString();
+                var val = JObject.FromObject(userRole).ToString(Formatting.None);
+                var result = await KafkaHelper.SendMessage(kafkaSettings.Value, "changeuserrole", key, val);
+                await KafkaHelper.SendMessage(kafkaSettings.Value, "logging", key, val);
+
+                var ret = new TransactionStatus(result, "");
+                if (!result)
+                    ret = new TransactionStatus(result, "Failed to submit data");
+                return await Task.FromResult(ret);
+            };
+            return new TransactionStatus(false, "User doesn't exist");
+        }
+
+        [Authorize(Roles = new[] { "Admin" })]
+        public async Task<TransactionStatus> LockUserAsync(
+            int userId,
+            [Service] TwittorDbContext context,
+            [Service] IOptions<KafkaSettings> kafkaSettings)
+        {
+            var userRoles = context.UserRoles.Where(o => o.UserId == userId).ToList();
+            bool check = false;
+            if (userRoles != null)
+            {
+                foreach (var userRole in userRoles)
+                {
+                    var key = "Lock-User-" + DateTime.Now.ToString();
+                    var val = JObject.FromObject(userRole).ToString(Formatting.None);
+                    var result = await KafkaHelper.SendMessage(kafkaSettings.Value, "lockuser", key, val);
+                    await KafkaHelper.SendMessage(kafkaSettings.Value, "logging", key, val);
+                    var ret = new TransactionStatus(result, "");
+                    check = true;
+                };
+
+                if (!check)
+                    return new TransactionStatus(false, "Failed to submit data");
+                return await Task.FromResult(new TransactionStatus(true, ""));
+            }
+            else
+            {
+                return new TransactionStatus(false, "User doesnt have any role yet");
+            }
+        }
     }
 }

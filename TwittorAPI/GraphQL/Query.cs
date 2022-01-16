@@ -34,12 +34,22 @@ namespace TwittorAPI.GraphQL
             await KafkaHelper.SendMessage(kafkaSettings.Value, "logging", key, val);
             return context.Users.Select(p => new UserDataDto()
             {
-                UserId = p.UserId,
+                Id = p.Id,
                 FullName = p.FullName,
                 Email = p.Email,
                 Username = p.Username
             });
 
+        }
+        public async Task<IQueryable<UserRole>> GetUserRoles(
+            [Service] TwittorDbContext context,
+            [Service] IOptions<KafkaSettings> kafkaSettings)
+        {
+            var key = "GetUserRoles-" + DateTime.Now.ToString();
+            var val = JObject.FromObject(new { Message = "GraphQL Query GetUserRoles" }).ToString(Formatting.None);
+
+            await KafkaHelper.SendMessage(kafkaSettings.Value, "logging", key, val);
+            return context.UserRoles;
         }
     }
 }
